@@ -1,14 +1,12 @@
 import random
 import string
+import json
+import os
+
+# --- GERAÇÃO DE SENHA---
 
 def gerar_senha(tamanho=12, usar_maiusculas=True, usar_numeros=True, usar_simbolos=True):
-    """
-    Gera uma senha aleatória baseada nos parâmetros fornecidos.
-    """
-    # Começamos sempre com letras minúsculas
     caracteres_disponiveis = string.ascii_lowercase
-    
-    # Adicionamos outros tipos de caracteres conforme as opções escolhidas
     if usar_maiusculas:
         caracteres_disponiveis += string.ascii_uppercase
     if usar_numeros:
@@ -16,27 +14,71 @@ def gerar_senha(tamanho=12, usar_maiusculas=True, usar_numeros=True, usar_simbol
     if usar_simbolos:
         caracteres_disponiveis += string.punctuation
 
-    # Verifica se há pelo menos um tipo de caractere selecionado
     if not caracteres_disponiveis:
         return "Erro: Selecione pelo menos um tipo de caractere."
 
-    # Gera a senha escolhendo caracteres aleatórios do conjunto disponível
     senha = ''.join(random.choice(caracteres_disponiveis) for _ in range(tamanho))
-    
     return senha
 
-# --- Testando o Gerador ---
+# --- GERENCIAMENTO DE SENHAS ---
+
+ARQUIVO_SENHAS = "meu_gerenciador.json"
+
+def salvar_senha(servico, usuario, senha):
+    """Salva uma senha no arquivo JSON."""
+    dados = carregar_senhas()
+    dados[servico] = {"usuario": usuario, "senha": senha}
+    
+    with open(ARQUIVO_SENHAS, "w") as arquivo:
+        json.dump(dados, arquivo, indent=4)
+    print(f"\n[Sucesso] Senha para '{servico}' salva!")
+
+def carregar_senhas():
+    """Lê o arquivo JSON e retorna um dicionário."""
+    if not os.path.exists(ARQUIVO_SENHAS):
+        return {}
+    with open(ARQUIVO_SENHAS, "r") as arquivo:
+        return json.load(arquivo)
+
+def listar_senhas():
+    """Exibe todas as senhas salvas."""
+    dados = carregar_senhas()
+    if not dados:
+        print("\nNenhuma senha encontrada.")
+        return
+
+    print("\n=== SENHAS ARMAZENADAS ===")
+    for servico, info in dados.items():
+        print(f"Serviço: {servico} | Usuário: {info['usuario']} | Senha: {info['senha']}")
+
+# --- INTERFACE DE TESTE ATUALIZADA ---
+
 if __name__ == "__main__":
-    print("=== Gerador de Senhas ===")
-    
-    # Exemplo 1: Senha padrão (12 caracteres, todos os tipos)
-    senha_padrao = gerar_senha()
-    print(f"Senha Padrão (12 chars): {senha_padrao}")
-    
-    # Exemplo 2: Senha super forte (20 caracteres)
-    senha_forte = gerar_senha(tamanho=20)
-    print(f"Senha Forte (20 chars):  {senha_forte}")
-    
-    # Exemplo 3: Apenas letras e números (PIN complexo)
-    senha_letras_numeros = gerar_senha(tamanho=8, usar_simbolos=False)
-    print(f"Senha sem símbolos:      {senha_letras_numeros}")
+    while True:
+        print("\n--- MENU ---")
+        print("1. Gerar e Salvar Nova Senha")
+        print("2. Ver Senhas Salvas")
+        print("3. Sair")
+        
+        opcao = input("Escolha uma opção: ")
+
+        if opcao == "1":
+            servico = input("Nome do serviço (ex: Netflix, Gmail): ")
+            usuario = input("Nome de usuário/e-mail: ")
+            tam = int(input("Tamanho da senha desejado: "))
+            
+            # Chama sua função original
+            nova_senha = gerar_senha(tamanho=tam)
+            
+            # Salva usando a nova função
+            salvar_senha(servico, usuario, nova_senha)
+            print(f"Senha gerada: {nova_senha}")
+
+        elif opcao == "2":
+            listar_senhas()
+
+        elif opcao == "3":
+            print("Saindo...")
+            break
+        else:
+            print("Opção inválida.")
